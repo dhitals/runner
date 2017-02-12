@@ -10,7 +10,7 @@ class Config(object):
       # currently, not using these params
       SECRET_KEY = 'key'
       HOST_NAME = 'localhost'
-      APP_NAME = 'runner'
+      APP_NAME = 'runner1'
       PYTHON_IP = '127.0.0.1'
       PORT = int(8080)
       PG_DB_HOST = 'localhost'
