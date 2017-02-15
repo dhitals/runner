@@ -1,84 +1,93 @@
+import os, sys, glob
 import numpy as np
 import pandas as pd
-import psycopg2 as pg
-from sqlalchemy import create_engine, MetaData, Table
-from sqlalchemy.sql import table, column, select, update, insert
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.automap import automap_base
+#import psycopg2 as pg
 
-from app import app
-from config import Config
+#from sqlalchemy import create_engine, MetaData, Table
+from sqlalchemy.sql import table, column, select, update, insert
+#from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import InvalidRequestError, OperationalError, SQLAlchemyError
+
+import gpxpy
+import geopandas as gpd
+from shapely.geometry import Point
+
+from app import app, engine, Base, Session
+from app.models import User, Event, Run
+#from config import Config
 
 
 class datakeeper():
-    
-    def __init__(self, recreate_if_exists=False, verbose=True):
 
-        engine_params = ['postgresql+psycopg2', Config.PG_DB_USERNAME,
-                         Config.PG_DB_PASSWORD, Config.PG_DB_HOST, Config.APP_NAME]
+    def __init__(self):
+        pass
+
+    def add_user(self, username, email, fname=None, lname=None, password=None):
+
+        s = Session()
         try:
-            # connect to the default DB & check if APP_DB exists
-            engine = create_engine('{0}://{1}:{2}@{3}/template1'.format('postgresql+psycopg2', 
-                                                                        Config.PG_DB_USERNAME,
-                                                                        Config.PG_DB_PASSWORD, 
-                                                                        Config.PG_DB_HOST,
-                                                                        'template1'))
-        except:
-            print('Error connecting to Postgres DB.\n')
+            u = User(username=username, email=email,
+                     fname=fname, lname=lname, password=password)
+            s.add(u)
+            s.commit()
+
+            print(u.id)
+
+            return int(u.id)
+        except SQLAlchemyError as err:
+            s.rollback()
             raise
-            
-        conn = engine.connect()
         
-        existing_dbs = [ d[0] for d in \
-                         conn.execute("SELECT datname from pg_database") ]
-
-        # IFF both are true
-        if Config.APP_NAME in existing_dbs and recreate_if_exists == True:
-            conn.execute("commit")
-            conn.execute("""DROP DATABASE {}""".format(Config.APP_NAME))
-            
-        # IFF either is true
-        if Config.APP_NAME not in existing_dbs or recreate_if_exists == True:
-            conn.execute("commit")
-            conn.execute("CREATE DATABASE {}".format(Config.APP_NAME))
-            
-            print("Created new <{0}> DB".format(Config.APP_NAME))
-
-        conn.close()
-                        
-        # go ahead, connect to the APP DB
-        self.engine = create_engine('{0}://{1}:{2}@{3}/{4}'.format('postgresql+psycopg2', 
-                                                                   Config.PG_DB_USERNAME,
-                                                                   Config.PG_DB_PASSWORD, 
-                                                                   Config.PG_DB_HOST,
-                                                                   Config.APP_NAME))
-        self.connection = engine.connect()
-        self.metadata = MetaData(bind=self.engine)
-        self.Session = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
-        self.Base = automap_base(metadata=self.metadata)
-        self.Base.prepare(self.engine, reflect=True)
-        
-        self.metadata.reflect(self.engine) #, schema=self.dbName)
-        
-        # create the tables
-        from models import User, Event, Run
-        self.Base.metadata.create_all()
-        
-        return
+        s.close()
     
+    def add_events(self, user_id, path=None):
 
-    def add_user(self, username, email, password=None, fname=None, lname=None):
-        s = self.Session()
+        if path is None:
+            path = '/Users/saurav/projects/runner/data/'
+
+        events, runs = [], []
+
+        files = glob.glob(path+'*Run*.gpx')
+
+        for file in files[0:3]:
+            gpx_file = open(file, 'r')
+            gpx = gpxpy.parse(gpx_file)
+
+            for t in gpx.tracks:
+                for j, s in enumerate(t.segments):
+                    events.append([t.name, t.get_time_bounds().start_time, t.length_3d(), 
+                                   t.get_duration(), t.get_moving_data().max_speed, 
+                                   os.path.basename(file)])
+                    for i, p in enumerate(s.points):
+                        runs.append([t.get_time_bounds().start_time,
+                                     p.time, p.latitude, p.longitude, p.elevation, s.get_speed(i)])
+
+        events = pd.DataFrame(events,
+                              columns=['name', 'start_time', 'distance',
+                                       'duration', 'max_speed', 'filename'])
+
+        events.distance = events.distance / 1.6e3 # meters --> miles
+        # events.duration = pd.to_timedelta(events.duration, unit='s')
+        events.max_speed = events.max_speed * (3600./1.6e3) # m/s --> mph
+        events['year']  = events.start_time.apply(lambda x: x.year)
+        events['month'] = events.start_time.apply(lambda x: x.month)
+        events['week']  = events.start_time.apply(lambda x: x.week)
+
+        events['run_type'] = ' '
+        events['avg_speed'] = 0.
+        events['avg_pace'] = 0.
+        events['avg_heartrate'] = 0.
+        events['avg_cadence'] = 0.
+        events['source'] = ''
+        events['shoes'] = ''
+        events['user_id'] = user_id
+
+        print(events.shape)
+        
         try:
-            ins = self.Base.classes.User(username=username, email=email, password=password,
-                                         fname=fname, lname=lname)
-            q = s.add(ins)
+            s = Session()
+            events.to_sql('events', engine, if_exists='append', index=False)
             s.commit()
             s.close()
-            return int(ins.id)
-        except:
-            s.rollback()
-            s.close()
+        except SQLAlchemyError as err:
             raise
-        
-            

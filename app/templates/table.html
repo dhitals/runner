@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}List of Runs{% endblock %}
+
+{% block content %}
+<div>
+  <table>
+    <tr>
+      <th width="25%"><a href="/sort=start_time">Time</a></th>
+      <th width="25%"><a href="/sort=name">name</a></th>
+      <th><a href="/sort=run_type">Run Type</a></th>
+      <th><a href="/sort=avg_speed">Avg Speed</a></th>
+      <th><a href="/sort=avg_pace">Avg Pace</a></th>
+      <th><a href="/sort=distance">Distance</a></th>
+      <th><a href="/sort=length">Duration</a></th>
+    </tr>
+
+    {% for event in events %}
+    <tr class="{{ loop.cycle('odd', 'even') }}">
+      <td>{{ event.start_time }}</a></td>
+      <td>{{ event.name }}</a></td>
+      <td>{{ event.run_type }}</a></td>
+      <td>{{ event.avg_speed }}</a></td>
+      <td>{{ event.avg_pace }}</a></td>
+      <td>{{ event.distance }}</a></td>
+      <td>{{ event.duration }}</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}
