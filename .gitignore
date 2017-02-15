@@ -3,3 +3,4 @@ data
 *.xml
 *.zip
 osm2pgsql
+*.pyc

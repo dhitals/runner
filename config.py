@@ -10,13 +10,15 @@ class Config(object):
       # currently, not using these params
       SECRET_KEY = 'key'
       HOST_NAME = 'localhost'
-      APP_NAME = 'runner1'
+      APP_NAME = 'runner'
       PYTHON_IP = '127.0.0.1'
       PORT = int(8080)
       PG_DB_HOST = 'localhost'
       PG_DB_PORT = int(5432)
       PG_DB_USERNAME = 'saurav'
       PG_DB_PASSWORD = 'saurav '
+
+      SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 class ProductionConfig(Config):
     DEBUG = False
