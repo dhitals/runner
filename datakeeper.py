@@ -36,6 +36,7 @@ class datakeeper():
             return int(u.id)
         except SQLAlchemyError as err:
             s.rollback()
+            print('Error: \n', err)
             raise
         
         s.close()

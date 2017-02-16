@@ -1,4 +1,5 @@
 import glob
+import numpy as np
 from flask import render_template, jsonify, request, flash, redirect, url_for
 #import urllib.request
 
@@ -9,6 +10,29 @@ from app.models import User, Event, Run
 @app.route('/')
 def index():
     return render_template('index.html', username='saurav')
+
+@app.route('/activities')
+@app.route('/activities?sort=<var>')
+def view_events(user_id=5):
+    s = Session()
+
+    try: var
+    except NameError: var = None
+
+    try:
+        # define sort_order -- passed in <var> is primary
+        so = ['duration', 'start_time', 'user_id', 'distance']
+        if var is not None: so = so.insert(0, var)
+
+        print(so[0])
+        
+        events = s.query(Event).order_by(so[0], so[1], so[2]).all()
+
+        return(render_template('table.html', username='saurav', events=events))
+    except:
+        s.rollback()
+        s.close()
+        raise       
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_user():
@@ -28,11 +52,3 @@ def add_user():
         s.close()
         raise
     
-@app.route('/list')
-def listAllRuns():
-    files = glob.glob('data/*Run*.gpx')
-    
-    for file in files:
-        gpx_file = open(file, 'r')
-        gpx = gpxpy.parse(gpx_file)
- 
