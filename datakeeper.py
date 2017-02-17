@@ -30,9 +30,6 @@ class datakeeper():
                      fname=fname, lname=lname, password=password)
             s.add(u)
             s.commit()
-
-            print(u.id)
-
             return int(u.id)
         except SQLAlchemyError as err:
             s.rollback()
@@ -50,7 +47,7 @@ class datakeeper():
 
         files = glob.glob(path+'*Run*.gpx')
 
-        for file in files[0:3]:
+        for file in files[0:2]:
             gpx_file = open(file, 'r')
             gpx = gpxpy.parse(gpx_file)
 
@@ -67,12 +64,15 @@ class datakeeper():
                               columns=['name', 'start_time', 'distance',
                                        'duration', 'max_speed', 'filename'])
 
+        print(events.start_time)
+        
+        events['date'] = events.start_time[0].date()
+        events.start_time = events.start_time[0].time()
         events.distance = events.distance / 1.6e3 # meters --> miles
-        # events.duration = pd.to_timedelta(events.duration, unit='s')
         events.max_speed = events.max_speed * (3600./1.6e3) # m/s --> mph
-        events['year']  = events.start_time.apply(lambda x: x.year)
-        events['month'] = events.start_time.apply(lambda x: x.month)
-        events['week']  = events.start_time.apply(lambda x: x.week)
+        # events['year']  = events.start_time.apply(lambda x: x.year)
+        # events['month'] = events.start_time.apply(lambda x: x.month)
+        # events['week']  = events.start_time.apply(lambda x: x.week)
 
         events['run_type'] = ' '
         events['avg_speed'] = 0.

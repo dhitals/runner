@@ -1,5 +1,6 @@
 import glob
 import numpy as np
+import pandas as pd
 from flask import render_template, jsonify, request, flash, redirect, url_for
 #import urllib.request
 
@@ -26,9 +27,9 @@ def view_events(user_id=5):
 
         print(so[0])
         
-        events = s.query(Event).order_by(so[0], so[1], so[2]).all()
+        events = s.query(Event).filter(Event.user_id == user_id).all()#order_by(so[0], so[1], so[2]).all()
 
-        return(render_template('table.html', username='saurav', events=events))
+        return(render_template('activities.html', username='saurav', events=events))
     except:
         s.rollback()
         s.close()
@@ -52,3 +53,10 @@ def add_user():
         s.close()
         raise
     
+@app.template_filter('convert_to_sexagesimal')
+def convert_to_sexagesimal_filter(t):
+    return pd.to_timedelta(t, unit='s')
+
+@app.template_filter('calc_speed')
+def calc_speed_filter(t):
+    return pd.to_timedelta(t, unit='s')

@@ -21,19 +21,20 @@ try:
     conn = engine.connect()
 
     existing_dbs = [ d[0] for d in \
-                         conn.execute("SELECT datname from pg_database") ]
+                         conn.execute('SELECT datname from pg_database') ]
 
     # IFF both are true
     if Config.APP_NAME in existing_dbs and recreate_if_exists == True:
-        conn.execute("commit")
+        conn.execute('COMMIT')
         conn.execute("""DROP DATABASE {}""".format(Config.APP_NAME))
             
     # IFF either is true
     if Config.APP_NAME not in existing_dbs or recreate_if_exists == True:
-        conn.execute("commit")
-        conn.execute("CREATE DATABASE {}".format(Config.APP_NAME))
-            
-        print("Created new <{0}> DB".format(Config.APP_NAME))
+        conn.execute('COMMIT')
+        conn.execute('CREATE DATABASE {}'.format(Config.APP_NAME))
+        conn.execute('CREATE EXTENSION POSTGIS')
+        
+        print('Created new <{0}> DB'.format(Config.APP_NAME))
 
     conn.close()    
 except:
