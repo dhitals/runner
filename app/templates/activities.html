@@ -26,7 +26,7 @@
       <td>{{ event.start_time | get_time }}</a></td>
       <td>{{ event.name }}</a></td>
       <td>{{ event.run_type }}</a></td>
-      <td>{{ event.max_speed | convert_mph | round(2) }}</a></td>
+      <td>{{ event.max_speed | round(2) }}</a></td>
       <td>{{ event.avg_pace }}</a></td>
       <td>{{ event.distance | round(2)}}</a></td>
       <td>{{ event.duration | convert_to_sexagesimal}}</a></td>

@@ -31,8 +31,7 @@ class Event(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String)
-    date = Column (DateTime)
-    start_time = Column(DateTime) # start datetime
+    datetime = Column (DateTime)
     run_type = Column(String)
     distance = Column(Float)
     duration = Column(Float)
@@ -43,9 +42,6 @@ class Event(Base):
     avg_cadence = Column(String)
     source = Column(String)
     shoes = Column(String)
-    # year = Column(Integer)
-    # month = Column(Integer)
-    # week = Column(Integer)
     filename = Column(String)
     user_id = Column(Integer, ForeignKey('users.id'))
 
@@ -57,8 +53,11 @@ class Run(Base):
     __tablename__ = 'runs'
 
     time = Column(DateTime, primary_key=True)
-    point = Column(Geometry('Point', srid=4326))
+    #point = Column(Geometry(geometry_type='Point', srid=4326))
+    latitude = Column(Float)
+    longitude = Column(Float)
     elevation = Column(Float)
+    speed = Column(Float)
     heartrate  = Column(Float)
     cadence = Column(Float)
     user_id = Column(Integer, ForeignKey('users.id'))

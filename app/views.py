@@ -6,7 +6,9 @@ import pint
 
 from app import app, Session
 from app.models import User, Event, Run
+from datakeeper import datakeeper
 
+dk = datakeeper()
 
 @app.route('/')
 def index():
@@ -25,10 +27,8 @@ def view_activities(user_id=1):
         so = ['duration', 'start_time', 'user_id', 'distance']
         if var is not None: so = so.insert(0, var)
 
-        print(so[0])
-        
         events = s.query(Event).filter(Event.user_id == user_id).all()#order_by(so[0], so[1], so[2]).all()
-
+        
         return(render_template('activities.html', username='saurav', events=events))
     except:
         s.rollback()
@@ -68,12 +68,3 @@ def get_date_filter(dt):
 @app.template_filter('get_time')
 def get_time_filter(dt):
     return dt.time()
-
-@app.template_filter('convert_mph')
-def convert_mph_filter(speed):
-    ureg = pint.UnitRegistry()
-    
-    d, t = 1 * ureg.meter, 1 * ureg.second
-    speed *= d/t
-
-    return speed.to(ureg.miles / ureg.hour).magnitude
