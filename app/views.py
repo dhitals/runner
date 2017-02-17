@@ -2,7 +2,7 @@ import glob
 import numpy as np
 import pandas as pd
 from flask import render_template, jsonify, request, flash, redirect, url_for
-#import urllib.request
+import pint
 
 from app import app, Session
 from app.models import User, Event, Run
@@ -14,7 +14,7 @@ def index():
 
 @app.route('/activities')
 @app.route('/activities?sort=<var>')
-def view_events(user_id=5):
+def view_activities(user_id=1):
     s = Session()
 
     try: var
@@ -60,3 +60,20 @@ def convert_to_sexagesimal_filter(t):
 @app.template_filter('calc_speed')
 def calc_speed_filter(t):
     return pd.to_timedelta(t, unit='s')
+
+@app.template_filter('get_date')
+def get_date_filter(dt):
+    return dt.date()
+
+@app.template_filter('get_time')
+def get_time_filter(dt):
+    return dt.time()
+
+@app.template_filter('convert_mph')
+def convert_mph_filter(speed):
+    ureg = pint.UnitRegistry()
+    
+    d, t = 1 * ureg.meter, 1 * ureg.second
+    speed *= d/t
+
+    return speed.to(ureg.miles / ureg.hour).magnitude
