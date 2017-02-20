@@ -9,8 +9,8 @@
 <div class="libpage">
   <table class="libtable">
     <tr>
-      <th><a href="/activities?sort=date">Date</a></th>
-      <th><a href="/activities?sort=start_time">Time</a></th>
+      <th><a href="/activities?sort=datetime">Date</a></th>
+      <th><a href="/activities?sort=datetime">Time</a></th>
       <th><a href="/activities?sort=name">name</a></th>
       <th><a href="/activities?sort=run_type">Run Type</a></th>
       <th><a href="/activities?sort=avg_speed">Max Speed</a></th>
@@ -22,8 +22,8 @@
     {% set sort_on = request.args.sort_on | default('duration') %}
     {% for event in events | sort(attribute=sort_on) %}
     <tr class="{{ loop.cycle('odd', 'even') }}">
-      <td>{{ event.start_time | get_date }}</a></td>
-      <td>{{ event.start_time | get_time }}</a></td>
+      <td>{{ event.datetime | get_date }}</a></td>
+      <td>{{ event.datetime | get_time }}</a></td>
       <td>{{ event.name }}</a></td>
       <td>{{ event.run_type }}</a></td>
       <td>{{ event.max_speed | round(2) }}</a></td>

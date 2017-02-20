@@ -9,8 +9,9 @@ import gpxpy
 import geopandas as gpd
 from shapely.geometry import Point
 #import shapely.wkb
+import units
 
-from app import app, Base, Session
+from app import app, Base, engine, Session
 from app.models import User, Event, Run
 
 """ 
@@ -25,6 +26,7 @@ When appending data, this will necessitate first writing to a temporary table.
 class datakeeper():
     def __init__(self):
         pass
+    
     def add_user(self, username, email, fname=None, lname=None, password=None):
 
         s = Session()
@@ -40,7 +42,10 @@ class datakeeper():
             raise
         
         s.close()
-    
+
+    def get_pace(self, speed):
+        pace = 60. / speed
+        
     def add_event(self, user_id, path=None):
 
         if path is None: # IFF starting from scratch
@@ -50,7 +55,7 @@ class datakeeper():
 
         events, runs = [], []
         # process and import each file one at a time
-        for file in files[0:1]:
+        for file in files[0:10]:
             gpx_file = open(file, 'r')
             gpx = gpxpy.parse(gpx_file)
 

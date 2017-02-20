@@ -46,7 +46,7 @@ class Event(Base):
     user_id = Column(Integer, ForeignKey('users.id'))
 
     def __repr__(self):
-        return "<Event(id='%s', start_time='%s', name='%s')>" % (
+        return "<Event(id='%s', datetime='%s', name='%s')>" % (
             self.id, self.start_time, self.name)
 
 class Run(Base):
