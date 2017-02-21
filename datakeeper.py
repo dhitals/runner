@@ -7,7 +7,7 @@ from sqlalchemy.exc import InvalidRequestError, OperationalError, SQLAlchemyErro
 
 import gpxpy
 import geopandas as gpd
-from shapely.geometry import Point
+#from shapely.geometry import Point
 #import shapely.wkb
 import units
 
