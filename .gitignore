@@ -4,4 +4,3 @@ data
 *.zip
 osm2pgsql
 *.pyc
-folium-master/

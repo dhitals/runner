@@ -14,6 +14,10 @@ class map(object):
     def __init__():
         pass
 
+    def get_pace(self, speed):
+        " convert speed (m/s) to pace (min/miles) """
+        pace = 60. / speed
+
     def map(self, file):
         layer = fiona.open(file, layer='tracks')
 

@@ -44,8 +44,11 @@ class datakeeper():
         s.close()
 
     def get_pace(self, speed):
+        " convert from spped (m/s) to pace (miles/min) """
         pace = 60. / speed
-        
+
+
+    
     def add_event(self, user_id, path=None):
 
         if path is None: # IFF starting from scratch
@@ -55,7 +58,7 @@ class datakeeper():
 
         events, runs = [], []
         # process and import each file one at a time
-        for file in files[0:10]:
+        for file in files:
             gpx_file = open(file, 'r')
             gpx = gpxpy.parse(gpx_file)
 
