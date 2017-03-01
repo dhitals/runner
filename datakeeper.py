@@ -14,6 +14,8 @@ import units
 from app import app, Base, engine, Session
 from app.models import User, Event, Run
 
+import matplotlib.pyplot as plt
+
 """ 
 SQLAlchemy and psycopg2 do not understand geometry. So when reading / writing 
 to POSTGIS, one needs to convert to  binary or hex, generally using shapely.wkb.
@@ -116,3 +118,51 @@ class datakeeper():
             s.close()
         except SQLAlchemyError as err:
             raise
+
+class summary():
+
+    def __init__(self):
+        pass
+    
+    def summarize(self, df, groupby=None):
+    
+        df = df.copy()
+        cols_to_drop = [ col for col in df.columns if 'id' in col or 'name' in col ]
+        df.drop(cols_to_drop, axis=1, inplace=True)
+        
+        if groupby == 'year':
+            groupby = df.index.year
+        elif groupby == 'month':
+            groupby = [df.index.year, df.index.month]
+        elif groupby == 'week':
+            groupby = [df.index.year, df.index.week]
+    
+        try:
+            g = df.groupby(groupby).mean()
+            g_sum  = df.groupby(groupby).sum()
+            g_max  = df.groupby(groupby).max()
+        except:
+            print('Error: Your `groupby` variable is not valid.')
+            
+        g.rename(columns={'distance': 'avg_distance', 
+                          'duration': 'avg_duration'}, inplace=True)
+        g['n_activities'] = df.groupby(groupby)['distance'].count()
+        g['total_distance'] = g_sum['distance']
+        g['total_duration'] = g_sum['duration']
+        g['max_distance'] = g_max['distance']
+        g['max_duration'] = g_max['duration']
+            
+        return g
+
+    def plot(self, df):
+        fig, ax = plt.subplots(3,3, figsize=(16,10))
+        
+        df.plot(y='total_distance', kind='bar', ax=ax[0,0])
+        df.plot(y='avg_distance', kind='bar', ax=ax[0,1])
+        df.plot(y='max_distance', kind='bar', ax=ax[0,2])
+        
+        df.plot(y='total_duration', kind='bar', ax=ax[1,0])
+        df.plot(y='avg_duration', kind='bar', ax=ax[1,1])
+        df.plot(y='max_duration', kind='bar', ax=ax[1,2])
+        
+        return

@@ -1,12 +1,14 @@
 import glob
 import numpy as np
 import pandas as pd
+import stravalib
 from flask import render_template, jsonify, request, flash, redirect, url_for
 import pint
 
 from app import app, Session
 from app.models import User, Event, Run
 from datakeeper import datakeeper
+from app.apikey import CLIENT_ID, CLIENT_SECRET
 
 dk = datakeeper()
 
@@ -68,3 +70,14 @@ def get_date_filter(dt):
 @app.template_filter('get_time')
 def get_time_filter(dt):
     return dt.time()
+
+@app.route("/auth")
+def auth_callback():
+    API_CLIENT = stravalib.Client()
+    code = request.args.get('code')
+    access_token = API_CLIENT.exchange_code_for_token(
+        client_id=CLIENT_ID,
+        client_secret=CLIENT_SECRET,
+        code=code
+        )
+    return access_token
