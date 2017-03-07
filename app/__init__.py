@@ -9,7 +9,7 @@ app = Flask(__name__)
 app.config.from_object('config.DevelopmentConfig')
 
 # if you want to restart the DB - set it somewhere else
-recreate_if_exists = False
+recreate_if_exists = True
 
 try:
     # connect to the default DB & check if APP_DB exists
@@ -27,13 +27,13 @@ try:
     # IFF both are true
     if Config.APP_NAME in existing_dbs and recreate_if_exists == True:
         conn.execute('COMMIT')
-        conn.execute("""DROP DATABASE {}""".format(Config.APP_NAME))
+        conn.execute("""DROP DATABASE {0}""".format(Config.APP_NAME))
             
     # IFF either is true
     if Config.APP_NAME not in existing_dbs or recreate_if_exists == True:
         conn.execute('COMMIT')
-        conn.execute('CREATE DATABASE {}'.format(Config.APP_NAME))
-        print('Created new DB <{}>'.format(Config.APP_NAME))
+        conn.execute('CREATE DATABASE {0}'.format(Config.APP_NAME))
+        print('Created new DB <{0}>'.format(Config.APP_NAME))
 
     # to enable spatial ref system
     # conn.execute('CREATE EXTENSION POSTGIS')
@@ -45,7 +45,8 @@ except:
 
 # now, go ahead and use the <RUNNER> DB
 try:
-    engine = create_engine('{0}://{1}:{2}@{3}/{4}'.format('postgresql+psycopg2',                                                                Config.PG_DB_USERNAME,
+    engine = create_engine('{0}://{1}:{2}@{3}/{4}'.format('postgresql+psycopg2',
+                                                          Config.PG_DB_USERNAME,
                                                           Config.PG_DB_PASSWORD, 
                                                           Config.PG_DB_HOST,
                                                           Config.APP_NAME))
@@ -54,8 +55,8 @@ try:
     Session = sessionmaker(bind=engine)
 
     # if `users` table does not exist, assume no tables exist & create all
-    if (conn.execute('select exists(select * from information_schema.tables where table_name=%s)', ('users',)).fetchone()[0]) is False:
-        from app.models import User, Event, Run
+    if (conn.execute('SELECT EXISTS(SELECT * from information_schema.tables WHERE table_name=%s)', ('users',)).fetchone()[0]) is False:
+        from app.models import Activity, Streams, User
         Base.metadata.create_all()
     
     conn.close()

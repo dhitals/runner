@@ -1,7 +1,6 @@
 .*
 data
-*.xml
-*.zip
+*.ipynb
 osm2pgsql
 *.pyc
 **/__*

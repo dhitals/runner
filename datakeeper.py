@@ -13,7 +13,7 @@ import geopandas as gpd
 import units
 
 from app import app, Base, engine, Session
-from app.models import User, Event, Run
+from app.models import User, Activity, Streams
 
 from stravalib.client import Client
 from app.apikey import CLIENT_ID, CLIENT_SECRET

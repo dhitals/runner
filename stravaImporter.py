@@ -11,7 +11,7 @@ import geopandas as gpd
 #import shapely.wkb
 
 from app import app, Base, engine, Session
-from app.models import Activity, User
+from app.models import Activity, User, Streams, User
 
 from stravalib.client import Client
 from app.apikey import CLIENT_ID, CLIENT_SECRET
@@ -19,7 +19,6 @@ from app.apikey import CLIENT_ID, CLIENT_SECRET
 """ Util to import Strava data and store it in PostGres DB.
 
     Ignoring GIS support for now. Look at the GPX import for GIS-enabling.
-
 """
 
 class stravaImporter(object):
@@ -46,6 +45,13 @@ class stravaImporter(object):
         self.athlete = self.client.get_athlete()
         print("For {}, I now have an access token".format(self.athlete.id))
 
+        # name of tables in model
+        self.user_TBL = 'users'
+        self.activity_TBL = 'activities'
+        self.streams_TBL = 'streams'
+        self.gear_TBL = 'gear'
+
+        # streams to extract from strava
         self.streams = ['time', 'latlng', 'distance', 'altitude', 'velocity_smooth',
                         'heartrate', 'cadence', 'temp', 'moving', 'grade_smooth' ]
         
@@ -57,7 +63,7 @@ class stravaImporter(object):
         # download all stream_types except `power`
         return self.client.get_activity_streams(activity_id, types=self.streams)
     
-    def get_DF(self, s):
+    def stream_to_DF(self, s):
         """ Convert a Strava Stream to a pandas DF """
         return pd.DataFrame.from_dict({ k: s[k].data for k in s.keys() })
 
@@ -65,17 +71,20 @@ class stravaImporter(object):
         s = Session()
         try:
             u = User(username=username, email=email,
-                     fname=fname, lname=lname, password=password)
+                     fname=fname, lname=lname, password=password,
+                     strava_id=self.athlete.id)
             s.add(u)
             s.commit()
             return int(u.id)
         except SQLAlchemyError as err:
             s.rollback()
             print('Error: \n', err)
-            raise        
-        s.close()
+            raise
 
-    def add_activity(self, user_id, before=None, after=None, limit=None):
+        s.close()
+        return
+
+    def add_activity(self, user_id, before=None, after=None, limit=None, add_streams=True):
         """ Get & add a list of activities from strava """
         
         # get the list of activities from strava
@@ -86,13 +95,46 @@ class stravaImporter(object):
         
         s = Session()
         try:
-            df.to_sql('runs', engine, if_exists='append', index=False)
+            df.to_sql(self.activity_TBL, engine, if_exists='append', index=False)
+            s.commit()            
+            print('Added {0} activities from Strava.'.format(len(df.strava_id)))
+        except:
+            s.rollback()
+            print('Error: `add_activity` cannot write event to DB. \n')
+            raise
+        s.close()
+
+        # if needed, add the streams as well
+        if add_streams is True:
+            for strava_id in df.strava_id:
+                self.add_streams(user_id, strava_id)
+                print('Added `Streams` for {0} activities from Strava.'.format(len(df.strava_id)))
+
+        return
+
+    def add_streams(self, user_id, s_id):
+        """ Add Strava data streams for a given user_id and activity_id """
+        
+        s = Session()
+
+        # get the strava streams for that activity
+        stream = self.get_streams(s_id)
+        # convert the streams to a DF
+        df = self.stream_to_DF(stream)
+
+        # add activity_id to the DF
+        df['activity_id'] = s.query(Activity.id).filter_by(strava_id=s_id.astype(str)).one()[0]
+        
+        try:
+            df.to_sql(self.streams_TBL, engine, if_exists='append', index=False)
             s.commit()
         except:
             s.rollback()
-            print('Error: Cannot write event to DB. \n')
-            raise            
+            print('Error: `add_streams` cannot write event to DB. \n')
+            raise
 
+        s.close() 
+        return
 
     def strip_units(self, df, cols):
         """ strip units from columns -- changes dtype from `object` to `float`"""
@@ -135,4 +177,9 @@ class stravaImporter(object):
         cols_to_strip = ('average_speed', 'max_speed', 'distance', 'total_elevation_gain')
         df = self.strip_units(df, cols_to_strip)
 
+        # pd.to_sql does not yet support TZ, so strip it. for now.
+        # also does not suport timedelta ... maybe I have to ditch `pd.to_sql`
+        # https://github.com/pandas-dev/pandas/issues/9086
+        df.start_date = pd.DatetimeIndex(df.start_date).tz_convert(None)
+        df.timezone = df.timezone.astype(str)
         return df
