@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import time
 
 from flask import abort, request
 from sqlalchemy.sql import table, column, select, update, insert
@@ -61,7 +62,13 @@ class stravaImporter(object):
     def get_streams(self, activity_id):
         # download the entire stream: `resolution` = `all` (default)
         # download all stream_types except `power`
-        return self.client.get_activity_streams(activity_id, types=self.streams)
+        try:
+            s = self.client.get_activity_streams(activity_id, types=self.streams)
+            return 
+        except:
+            print('Could not get streams for activity {0}'.format(activity_id))
+            return
+
     
     def stream_to_DF(self, s):
         """ Convert a Strava Stream to a pandas DF """
@@ -97,7 +104,7 @@ class stravaImporter(object):
         try:
             df.to_sql(self.activity_TBL, engine, if_exists='append', index=False)
             s.commit()            
-            print('Added {0} activities from Strava.'.format(len(df.strava_id)))
+            print('Added {0} activities from Strava.\n'.format(len(df.strava_id)))
         except:
             s.rollback()
             print('Error: `add_activity` cannot write event to DB. \n')
@@ -106,34 +113,39 @@ class stravaImporter(object):
 
         # if needed, add the streams as well
         if add_streams is True:
-            for strava_id in df.strava_id:
+            size = len(df.strava_id)
+            for (i, strava_id) in enumerate(df.strava_id):
+                print('Fetching data streams for {0}: {1} of {2}'.format(strava_id, i, size), end='\r')
+                time.sleep(self.API_CALL_PAUSE_SECONDS) # limit API call to 40 / min
+
                 self.add_streams(user_id, strava_id)
-                print('Added `Streams` for {0} activities from Strava.'.format(len(df.strava_id)))
+            print('Added `Streams` for {0} activities from Strava.'.format(len(df.strava_id)))
 
         return
 
     def add_streams(self, user_id, s_id):
-        """ Add Strava data streams for a given user_id and activity_id """
-        
-        s = Session()
+        """ Add Strava data streams for a given user_id and activity_id """                
 
         # get the strava streams for that activity
         stream = self.get_streams(s_id)
         # convert the streams to a DF
-        df = self.stream_to_DF(stream)
+        if stream is not None:
+            s = Session()
 
-        # add activity_id to the DF
-        df['activity_id'] = s.query(Activity.id).filter_by(strava_id=s_id.astype(str)).one()[0]
+            df = self.stream_to_DF(stream)
+
+            # add activity_id to the DF
+            df['activity_id'] = s.query(Activity.id).filter_by(strava_id=s_id.astype(str)).one()[0]
         
-        try:
-            df.to_sql(self.streams_TBL, engine, if_exists='append', index=False)
-            s.commit()
-        except:
-            s.rollback()
-            print('Error: `add_streams` cannot write event to DB. \n')
-            raise
+            try:
+                df.to_sql(self.streams_TBL, engine, if_exists='append', index=False)
+                s.commit()
+            except:
+                s.rollback()
+                print('Error: `add_streams` cannot write event to DB. \n')
+                raise
 
-        s.close() 
+            s.close() 
         return
 
     def strip_units(self, df, cols):
