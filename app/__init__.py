@@ -9,7 +9,7 @@ app = Flask(__name__)
 app.config.from_object('config.DevelopmentConfig')
 
 # if you want to restart the DB - set it somewhere else
-recreate_if_exists = True
+recreate_if_exists = False
 
 try:
     # connect to the default DB & check if APP_DB exists

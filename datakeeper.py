@@ -133,9 +133,18 @@ class summary():
         pass
     
     def summarize(self, df, groupby=None):
+        """ Return a DF w/ a summary of the acitivities grouped by the input parameter 
+
+            For e.g., by default, this will return the (average, max, total) values of
+            (distance, moving_time, average_speed, average_cadence, average_heartrate) 
+            of your activities grouped by (month, week).
+        """
     
         df = df.copy()
-        cols_to_drop = [ col for col in df.columns if 'id' in col or 'name' in col ]
+        #cols_to_drop = 
+        cols_to_drop = ['id', 'external_id', 'gear_id', 'name', 'strava_id', 
+                'upload_id', 'user_id', 'athlete_count', 'has_heartrate', 
+                'manual', 'pr_count', 'start_latitude', 'start_longitude']
         df.drop(cols_to_drop, axis=1, inplace=True)
         
         if groupby == 'year':
@@ -152,13 +161,19 @@ class summary():
         except:
             print('Error: Your `groupby` variable is not valid.')
             
-        g.rename(columns={'distance': 'avg_distance', 
-                          'duration': 'avg_duration'}, inplace=True)
+        g.rename(columns={'distance': 'average_distance', 
+                          'moving_time': 'average_moving_time'}, inplace=True)
+
         g['n_activities'] = df.groupby(groupby)['distance'].count()
-        g['total_distance'] = g_sum['distance']
-        g['total_duration'] = g_sum['duration']
-        g['max_distance'] = g_max['distance']
-        g['max_duration'] = g_max['duration']
+
+        g['total_distance'] = g_sum.distance
+        g['total_moving_time'] = g_sum.moving_time
+
+        g['max_distance'] = g_max.distance
+        g['max_moving_time'] = g_max.moving_time
+        g['max_average_speed'] = g_max.average_speed
+        g['max_average_cadence'] = g_max.average_cadence
+        g['max_average_heartrate'] = g_max.average_heartrate
             
         return g
 

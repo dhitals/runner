@@ -15,7 +15,7 @@ from app import app, Base, engine, Session
 from app.models import Activity, User, Streams, User
 
 from stravalib.client import Client
-from app.apikey import CLIENT_ID, CLIENT_SECRET
+from app.apikey import CLIENT_ID, CLIENT_SECRET, ACCESS_CODE
 
 """ Util to import Strava data and store it in PostGres DB.
 
@@ -28,17 +28,17 @@ class stravaImporter(object):
         self.client = Client()
         self.API_CALL_PAUSE_SECONDS = 1.5  # 40 requests per minute
         
-        url = self.client.authorization_url(client_id=CLIENT_ID, 
-                               redirect_uri='http://localhost:5000/authorization')
+        # this is NOT working right now -- FIX -- using hard-coded URL / ACCESS_CODE right now
+        #url = self.client.authorization_url(client_id=CLIENT_ID, 
+        #                       redirect_uri='http://localhost:5000/authorization')
+        #code = request.args.get('code') # or whatever flask does
 
         url = 'http://www.strava.com/oauth/authorize?client_id=16424&response_type=code&redirect_uri=http://localhost/5001&approval_prompt=force&scope=write'
         print(url)
-
-        #code = request.args.get('code') # or whatever your framework does
-        code = 'ccb3d9e9f3e1114eb0d4b59b086f44268c3cfd96'
+        
         access_token = self.client.exchange_code_for_token(client_id=CLIENT_ID, 
                                                            client_secret=CLIENT_SECRET,
-                                                           code=code)        
+                                                           code=ACCESS_CODE)        
         # Now store that access token somewhere (a database?)
         self.client.access_token = access_token
         
@@ -57,6 +57,7 @@ class stravaImporter(object):
                         'heartrate', 'cadence', 'temp', 'moving', 'grade_smooth' ]
         
     def get_activities(self, before=None, after=None, limit=None):
+        """ Get activities and the related metadata from strava """
         return list(self.client.get_activities(before=before, after=after, limit=limit))
     
     def get_streams(self, activity_id):
@@ -66,10 +67,9 @@ class stravaImporter(object):
             s = self.client.get_activity_streams(activity_id, types=self.streams)
             return 
         except:
-            print('Could not get streams for activity {0}'.format(activity_id))
+            print('Could not get streams for activity {0}. Manual upload?'.format(activity_id))
             return
 
-    
     def stream_to_DF(self, s):
         """ Convert a Strava Stream to a pandas DF """
         return pd.DataFrame.from_dict({ k: s[k].data for k in s.keys() })
