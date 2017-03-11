@@ -40,7 +40,7 @@ class summarize(object):
         of your activities grouped by (month, week).
     """
  
-    def __init__(self, username, type=None, freq=None):
+    def __init__(self, username, type=None, freq=None, fields=None):
 
         s = Session()
 
@@ -55,22 +55,27 @@ class summarize(object):
         freq = 'M' if freq is None else freq
         df.index = df.index.to_period(freq)
     
+        # stats fields to summarize
+        if fields is None:
+            fields = ( 'distance', 'moving_time',
+                       'average_speed', 'max_speed',
+                       'average_heartrate', 'max_heartrate',
+                       'average_cadence', 'max_cadence',
+                       'suffer_score', 'total_elevation_gain' )
+
         # rearrange the columns in this order
-        self.summary_cols = ( 'distance', 'moving_time', 'speed', 'max_speed'
-                              'average_heartrate', 'max_heartrate',
-                              'average_cadence', 'max_cadence',
-                              'suffer_score', 'total_elevation_gain' )
-   
+        df = df.reindex(columns=fields)
+        
         # drop the rest of the columns
-        cols_to_drop = [ cols for cols in df.columns if cols not in self.summary_cols ]
+        cols_to_drop = [ cols for cols in df.columns if cols not in fields ]
         df.drop(cols_to_drop, axis=1, inplace=True)
         
         # perform the aggregations
-        self.summary_df = df.groupby(df.index).agg(['count', 'mean', 'sum', 'max'])#.reindex(columns=self.summary_cols)
-            
-        # rearrange the order of the columns
-        #df = df.reindex(columns=self.summary_cols)
+        self.summary_df = df.groupby(df.index).agg(['count', 'mean', 'sum', 'max'])
 
+        # remove some agg columns that don't make sense. e.g., `sum` of `average_cadence`
+        
+        
         return
 
     def pprint(self):
@@ -81,12 +86,13 @@ class summarize(object):
         u = pint.UnitRegistry()
        
         # now, change units and format each column
-        for col in df.columns:
-            if 'n_activities' in col:
-                df[col] = df[col].map('{:.0f}'.format)
-            elif 'distance' in col:
+        for col in df.columns.get_level_values(level=0):
+            print(col)
+            # if 'count' in col:
+            #     df[col] = df[col].map('{:.0f}'.format)
+            if 'distance' in col:
                 df[col] = df[col].apply(lambda x: (x * u.meter).to(u.mile)).map('{:.2f}'.format)
-            elif 'elev' in col:
+            elif 'elevation' in col:
                 df[col] = df[col].apply(lambda x: (x * u.meter).to(u.feet)).map('{:.0f}'.format)
             elif 'speed' in col:
                 df[col] = df[col].map(speed_to_pace)
