@@ -6,6 +6,13 @@ import pint
 from app import app, engine, Session
 from app.models import User, Activity, Streams
 
+def m_to_mile(x):
+    return x * 0.000621371 # meter --> mile
+
+def ns_to_hr(x):
+    """ """
+    return x * 1e-9 * 0.000277778 * 1e-9 # ns --> s --> hr
+
 def speed_to_pace(speed):
     """ Convert speed (m/s) to pace (MM:SS/mile)"""
     
@@ -117,22 +124,39 @@ class summarize(object):
 
         fig, ax = plt.subplots(3,2, figsize=(16,10))
 
+        fig, axes = plt.subplots(4,2, figsize=(16,16), sharex=True)
 
-        
-        #ax[0,0].plot(df.index, df.total_distance, marker='o', color='b', 
-        #    label='total_distance')
-        df.plot.scatter(y='total_distance', ax=ax[0,0])
-        df.plot(y='average_distance', kind='bar', ax=ax[0,1])
-        df.plot(y='max_distance', kind='bar', ax=ax[0,1])
-        
-        df.plot(y='total_moving_time', kind='bar', ax=ax[1,0])
-        df.plot(y='average_moving_time', kind='bar', ax=ax[1,1])
-        df.plot(y='max_moving_time', kind='bar', ax=ax[1,1])
+        n, x = len(df), np.arange(n)
 
-        df.plot(y='average_heartrate', kind='bar', ax=ax[2,0])
-        df.plot(y='max_average_heartrate', kind='bar', ax=ax[2,0])
+        ax = axes[0,0]           
+        df.distance_sum.apply(m_to_mile).plot(kind='bar', ax=ax,
+                                              label='distance (%s)' %'mile')
+        ax = axes[0,1]
+        ax.plot(x, df.distance_mean.apply(m_to_mile), 'bo', label='avg distance (%s)' %'miles')
+        ax.plot(x, df.distance_max.apply(m_to_mile),  'ro', label='max distance (%s)' %'miles')
+        ax.locator_params(nbins=n+1, axis='x')
+        ax.set_xticklabels(df.index, rotation=90)
+        l = ax.legend(shadow=True)
+        frame = l.get_frame()
+        frame.set_facecolor('0.0')
 
-        df.plot(y='average_cadence', kind='bar', ax=ax[2,1])
-        df.plot(y='max_average_cadence', kind='bar', ax=ax[2,1])
+        ax = axes[1,0]
+        df.moving_time_sum.apply(ns_to_hr).plot(kind='bar', ax=ax, 
+                                          label='moving_time (%s)' %'hrs')
+        ax = axes[1,1]
+        ax.plot(x, df.moving_time_mean.apply(ns_to_hr), 'bo', label='avg time (%s)' %'hrs')
+        ax.plot(x, df.moving_time_max.apply(ns_to_hr),  'ro', label='max time (%s)' %'hrs')
+        ax.locator_params(nbins=n+1, axis='x')
+        ax.set_xticklabels(df.index, rotation=90)
+        ax.legend()
+
+        # heartrate
+        ax = axes[2,0]
+        ax.plot(x, df.average_heartrate_mean, 'bo', label='< avg_heartrate >')
+        ax.plot(x, df.average_heartrate_max,  'ro', label='max avg_heartrate')
+        ax.locator_params(nbins=n+1, axis='x')
+        ax.set_xticklabels(df.index, rotation=90)
+        ax.set_ylim([150,200])
+        ax.legend()
         
         return
