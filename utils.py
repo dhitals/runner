@@ -57,11 +57,11 @@ class summarize(object):
     
         # stats fields to summarize
         if fields is None:
-            fields = ( 'distance', 'moving_time',
-                       'average_speed', 'max_speed',
-                       'average_heartrate', 'max_heartrate',
-                       'average_cadence', 'max_cadence',
-                       'suffer_score', 'total_elevation_gain' )
+            fields = [  'distance', 'moving_time',
+                        'average_speed', 'max_speed',
+                        'average_heartrate', 'max_heartrate',
+                        'average_cadence', 'max_cadence',
+                        'suffer_score', 'total_elevation_gain' ]
 
         # rearrange the columns in this order
         df = df.reindex(columns=fields)
@@ -71,36 +71,44 @@ class summarize(object):
         df.drop(cols_to_drop, axis=1, inplace=True)
         
         # perform the aggregations
-        self.summary_df = df.groupby(df.index).agg(['count', 'mean', 'sum', 'max'])
+        df = df.groupby(df.index).agg(['count', 'sum', 'mean', 'max'])
 
+        # keep only one version of `count`
+        df.insert(0, 'count', df['distance', 'count'])
+        df.drop('count', axis=1, level=1, inplace=True)
+
+       # drop MultiIndex -- dropping individual cols is too confusing
+        df.columns = [ ('_'.join([c1, c2])) for c1, c2 in \
+                        zip(df.columns.get_level_values(level=0), 
+                            df.columns.get_level_values(level=1)) ]
         # remove some agg columns that don't make sense. e.g., `sum` of `average_cadence`
+        df.drop([ 'average_cadence_sum', 
+                  'average_heartrate_sum', 'max_heartrate_sum',
+                  'average_speed_sum', 'max_speed_sum',
+                  'suffer_score_sum', 'total_elevation_gain_mean'], axis=1, inplace=True)
+
+        self.summary_df = df.sort_index(ascending=False)
         
-        
-        return
 
     def pprint(self):
-        """ Pretty print the summary table. 
-        This is slow likely b/c each column is operated on individually in a FOR loop 
-        """
+        """ Pretty print the summary table. """
         df = self.summary_df.copy()
         u = pint.UnitRegistry()
        
-        # now, change units and format each column
-        for col in df.columns.get_level_values(level=0):
-            print(col)
-            # if 'count' in col:
-            #     df[col] = df[col].map('{:.0f}'.format)
+        # now, change units and format each column -- !! SLOW !!
+
+        for col in df.columns:
             if 'distance' in col:
-                df[col] = df[col].apply(lambda x: (x * u.meter).to(u.mile)).map('{:.2f}'.format)
-            elif 'elevation' in col:
-                df[col] = df[col].apply(lambda x: (x * u.meter).to(u.feet)).map('{:.0f}'.format)
-            elif 'speed' in col:
-                df[col] = df[col].map(speed_to_pace)
+                df[col] = df[col].apply(lambda x: (x * u.meter).to(u.mile).magnitude).round(2)
             elif 'time' in col:
-                df[col] = df[col].map(nanosecond_to_hms)
+                df[col] = df[col].apply(nanosecond_to_hms)
+            elif 'speed' in col:
+                df[col] = df[col].apply(speed_to_pace)
+            elif 'elevation' in col:
+                df[col] = df[col].apply(lambda x: (x * u.meter).to(u.feet).magnitude).round(0)
             else:
-                df[col] = df[col].map('{:.2f}'.format)
-                
+                df[col] = df[col].round()
+
         return df
 
     def plot(self):
