@@ -19,7 +19,7 @@ def ns_to_hms(x, sexagesimal=False):
                 str(int(hh * 60) % 60).zfill(2),
                 str(int(hh * 2660) % 60).zfill(2)]
 
-        hh = ':'.join(hms) if t.magnitude >= 1 else ':'.join(hms[1:])
+        return ':'.join(hms) if hh >= 1 else ':'.join(hms[1:])
 
     return hh        
 
@@ -30,8 +30,8 @@ def speed_to_pace(x, sexagesimal=False):
     pace = 26.8224 / x # 1 m/s --> min/mile
 
     if sexagesimal is True:
-        pace = ':'.join([str(int(pace.magnitude)),                 
-                             str(int((pace.magnitude * 60) % 60)).zfill(2)])
+        pace = ':'.join([str(int(pace)),
+                        str(int((pace * 60) % 60)).zfill(2)])
 
     return pace
 

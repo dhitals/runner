@@ -9,27 +9,27 @@
 <div class="libpage">
   <table class="libtable">
     <tr>
-      <th><a href="/activities?sort=datetime">Date</a></th>
-      <th><a href="/activities?sort=datetime">Time</a></th>
-      <th><a href="/activities?sort=name">name</a></th>
-      <th><a href="/activities?sort=run_type">Run Type</a></th>
-      <th><a href="/activities?sort=avg_speed">Max Speed</a></th>
-      <th><a href="/activities?sort=avg_pace">Avg Pace</a></th>
+      <th><a href="/activities?sort=start_date">Date</a></th>
+      <th><a href="/activities?sort=start_date">Time</a></th>
+      <th width="50px"><a href="/activities?sort=name">Name</a></th>
+      <th><a href="/activities?sort=type">Type</a></th>
       <th><a href="/activities?sort=distance">Distance</a></th>
-      <th><a href="/activities?sort=duration">Duration</a></th>
+      <th><a href="/activities?sort=moving_time">Moving Time</a></th>
+      <th><a href="/activities?sort=average_speed">Avg Pace</a></th>
+      <th><a href="/activities?sort=max_speed">Max Pace</a></th>
     </tr>
 
-    {% set sort_on = request.args.sort_on | default('duration') %}
-    {% for event in events | sort(attribute=sort_on) %}
+
+    {% for activity in activities %} 
     <tr class="{{ loop.cycle('odd', 'even') }}">
-      <td>{{ event.datetime | get_date }}</a></td>
-      <td>{{ event.datetime | get_time }}</a></td>
-      <td>{{ event.name }}</a></td>
-      <td>{{ event.run_type }}</a></td>
-      <td>{{ event.max_speed | round(2) }}</a></td>
-      <td>{{ event.avg_pace }}</a></td>
-      <td>{{ event.distance | round(2)}}</a></td>
-      <td>{{ event.duration | convert_to_sexagesimal}}</a></td>
+      <td>{{ activity.start_date | get_date }}</td>
+      <td>{{ activity.start_date | get_time }}</td>
+      <td>{{ activity.name }}</td>
+      <td>{{ activity.type }}</td>
+      <td>{{ activity.distance | m_to_mile | round(2) }}</td>
+      <td>{{ activity.moving_time | ns_to_hms }}</td>
+      <td>{{ activity.average_speed | speed_to_pace }}</td>
+      <td>{{ activity.max_speed  | speed_to_pace }}</td>
     </tr>
     {% endfor %}
   </table>
