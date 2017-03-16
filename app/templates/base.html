@@ -1,9 +1,13 @@
+</html>
 <!DOCTYPE html>
 <html lang="en">
   <head>
     {% block head %}
     <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="http://cdn.pydata.org/bokeh/release/bokeh-0.12.0.min.css" type="text/css" />
+    <script type="text/javascript" src="http://cdn.pydata.org/bokeh/release/bokeh-0.12.0.min.js"></script>
+    {{ script | safe }}
     {% if title %}
     <title>{% block title %}{% endblock %} - Runner</title>
     {% else %}
@@ -13,10 +17,26 @@
   </head>
   
   <body>
-    <h2>Welcome back, {{ username }}!</h2>
+    <div style="text-align: right"> 
+      <h2> {{ username }}</h2>
+    </div>
+    
+    <div class="navbar">
+      <button class="dropbtn"><a href="/">Home</a></button>
+      <button class="dropbtn"><a href="/activities">Activities</a></button>
+      <button class="dropbtn"><a href="/log">Log</a></button>
+      <button class="dropbtn"><a href="/heatmap">Heatmap</a></button>
+      <button class="dropbtn"><a href="/summary_table">Summary</a></button>
+      <div class="dropdown-content">
+        <a href="/summary_table">Table</a>
+        <a href="/summary_plot">Plot</a>
+      </div>
+    </div>
+    
     <div>
       {% block container %} {% endblock %}
     </div>
+
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
     <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
   </body>

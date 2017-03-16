@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import seaborn as sns
 import pandas as pd
+from io import BytesIO
+import base64
 
 from app import app, engine, Session
 from app.models import User, Activity, Streams
@@ -97,7 +99,6 @@ class summarize(object):
     def pprint(self):
         """ Pretty print the summary table. """
         df = self.summary_df.copy()
-        u = pint.UnitRegistry()
        
         # now, change units and format each column -- !! SLOW !!
 
@@ -105,9 +106,9 @@ class summarize(object):
             if 'distance' in col:
                 df[col] = df[col].apply(m_to_mile).round(2)
             elif 'time' in col:
-                df[col] = df[col].apply(ns_to_hms)
+                df[col] = df[col].apply(ns_to_hms, sexagesimal=True)
             elif 'speed' in col:
-                df[col] = df[col].apply(speed_to_pace)
+                df[col] = df[col].apply(speed_to_pace, sexagesimal=True)
             else:
                 df[col] = df[col].round()
 
@@ -126,7 +127,7 @@ class summarize(object):
                 ax.fill_between(x, y, interpolate=True, color=color, alpha=0.5)
         return
 
-    def plot(self):
+    def plot(self, return_b64=False):
 
         df = self.summary_df.copy()
 
@@ -184,4 +185,11 @@ class summarize(object):
 
             ax.legend()
                 
-        return
+        if return_b64:
+            img = BytesIO()
+            plt.savefig(img, format='png')
+            img.seek(0) # go to the beginning
+
+            return base64.b64encode(img.getvalue()).decode('utf8')
+        else:
+            return

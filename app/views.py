@@ -3,18 +3,24 @@ import numpy as np
 import pandas as pd
 import stravalib
 from flask import render_template, jsonify, request, flash, redirect, url_for
-import pint
+
+import matplotlib.pyplot as plt
+from io import BytesIO
+import base64
 
 from app import app, Session
 from app.models import User, Activity, Streams
-from stravaImporter import stravaImporter
 from app.apikey import CLIENT_ID, CLIENT_SECRET
+from utils import summarize
 
-dk = stravaImporter()
+#from stravaImporter import stravaImporter
+#dk = stravaImporter()
+
+username, user_id = 'saurav', 1
 
 @app.route('/')
 def index():
-    return render_template('index.html', username='saurav')
+    return render_template('index.html', username=username)
 
 @app.route('/activities')
 @app.route('/activities?sort=<var>')
@@ -38,6 +44,21 @@ def view_activities(user_id=1):
         s.rollback()
         s.close()
         raise       
+
+@app.route('/summary')
+@app.route('/summary_plot')
+def summary_plot():
+    summ = summarize('saurav')    
+    plot_url = summ.plot(return_b64=True)
+
+    return render_template('summary_plot.html', plot_url=plot_url)
+
+@app.route('/summary_table')
+def summary_table():
+    summ = summarize(username)
+    df = summ.pprint()
+    
+    return render_template("summary_table.html", data=df.to_html(classes='longtable'))
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_user():
