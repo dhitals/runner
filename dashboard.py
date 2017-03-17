@@ -22,6 +22,6 @@ except:
     #    raise    
 
 # get & store the list of ALL activities from strava
-activities = strava.add_activity(user_id)
+activities = strava.add_activity(user_id, add_streams=True)
 
 # update (sync) activities using the last activity date

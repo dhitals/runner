@@ -45,6 +45,26 @@ def view_activities(user_id=1):
         s.close()
         raise       
 
+@app.route('/activity=<var>')
+def view_activity(user_id, activity_id):
+
+    # query Postgres db for for that activity
+    try:
+        q = "SELECT * FROM {0} WHERE user_id={1} AND activity_id={2}".format('streams',
+                                                                         user_id,                                                                                      
+                                                                         activity_id)
+        df = pd.read_sql_query(q, engine)
+    except: 
+        print('Check DB connection: I cannot retrieve activity.')
+
+    # get run coordinates as a list of tuple of (lat, lon)
+    coords = [ ( float(df.latlng[1:-2].split(',')[0]), 
+                 float(df.latlng[1:-2].split(',')[1]) )
+              for x in latlng ]
+    # get a folium map for the coords
+    m = get_map()
+    return(render_template('activity.html', map=m))
+
 @app.route('/summary')
 @app.route('/summary_plot')
 def summary_plot():

@@ -6,8 +6,8 @@ from flask import abort, request
 from sqlalchemy.sql import table, column, select, update, insert
 from sqlalchemy.exc import InvalidRequestError, OperationalError, SQLAlchemyError, ProgrammingError
 
-import gpxpy
-import geopandas as gpd
+#import gpxpy
+#import geopandas as gpd
 #from shapely.geometry import Point
 #import shapely.wkb
 
@@ -33,8 +33,8 @@ class stravaImporter(object):
         #                       redirect_uri='http://localhost:5000/authorization')
         #code = request.args.get('code') # or whatever flask does
 
-        url = 'http://www.strava.com/oauth/authorize?client_id=16424&response_type=code&redirect_uri=http://localhost/5001&approval_prompt=force&scope=write'
-        print(url)
+        #url = 'http://www.strava.com/oauth/authorize?client_id=16424&response_type=code&redirect_uri=http://localhost/5001&approval_prompt=force&scope=write'
+        #print(url)
         
         access_token = self.client.exchange_code_for_token(client_id=CLIENT_ID, 
                                                            client_secret=CLIENT_SECRET,
@@ -65,7 +65,7 @@ class stravaImporter(object):
         # download all stream_types except `power`
         try:
             s = self.client.get_activity_streams(activity_id, types=self.streams)
-            return 
+            return s
         except:
             print('Could not get streams for activity {0}. Manual upload?'.format(activity_id))
             return
@@ -91,11 +91,41 @@ class stravaImporter(object):
         s.close()
         return
 
+    def add_streams(self, user_id, s_id):
+        """ Add Strava data streams for a given user_id and activity_id """                
+
+        # get the strava streams for that activity
+        stream = self.get_streams(s_id)
+        # convert the streams to a DF
+        if stream is not None:
+            s = Session()
+
+            df = self.stream_to_DF(stream)
+
+            # add `user_id` to the DF
+            df['user_id'] = user_id
+            # add `activity_id` to the DF
+            df['activity_id'] = s.query(Activity.id).filter_by(strava_id=s_id.astype(str)).one()[0]
+        
+            try:
+                df.to_sql(self.streams_TBL, engine, if_exists='append', index=False)
+                s.commit()
+            except:
+                s.rollback()
+                print('Error: `add_streams` cannot write event to DB. \n')
+                raise
+
+            s.close()
+        else:
+            print('Error: Stream is empty for User {0}, Activity {1}'.format(user_id, s_id))
+        return
+
     def add_activity(self, user_id, before=None, after=None, limit=None, add_streams=True):
         """ Get & add a list of activities from strava """
         
         # get the list of activities from strava
         activities = self.get_activities(before=before, after=after, limit=limit)
+        activities = activities
         # transform activities to a DF ready for Postgres
         df = self.munge_activity(activities)
         df['user_id'] = user_id
@@ -121,31 +151,6 @@ class stravaImporter(object):
                 self.add_streams(user_id, strava_id)
             print('Added `Streams` for {0} activities from Strava.'.format(len(df.strava_id)))
 
-        return
-
-    def add_streams(self, user_id, s_id):
-        """ Add Strava data streams for a given user_id and activity_id """                
-
-        # get the strava streams for that activity
-        stream = self.get_streams(s_id)
-        # convert the streams to a DF
-        if stream is not None:
-            s = Session()
-
-            df = self.stream_to_DF(stream)
-
-            # add activity_id to the DF
-            df['activity_id'] = s.query(Activity.id).filter_by(strava_id=s_id.astype(str)).one()[0]
-        
-            try:
-                df.to_sql(self.streams_TBL, engine, if_exists='append', index=False)
-                s.commit()
-            except:
-                s.rollback()
-                print('Error: `add_streams` cannot write event to DB. \n')
-                raise
-
-            s.close() 
         return
 
     def strip_units(self, df, cols):
