@@ -2,16 +2,17 @@ import glob
 import numpy as np
 import pandas as pd
 import stravalib
-from flask import render_template, jsonify, request, flash, redirect, url_for
+from flask import jsonify, redirect, render_template, request, send_file, url_for
 
 import matplotlib.pyplot as plt
 from io import BytesIO
 import base64
 
-from app import app, Session
-from app.models import User, Activity, Streams
+from app import app, engine, Session
 from app.apikey import CLIENT_ID, CLIENT_SECRET
-from utils import summarize
+from app.models import User, Activity, Streams
+from app.maps import get_map
+from app.utils import summarize
 
 #from stravaImporter import stravaImporter
 #dk = stravaImporter()
@@ -36,34 +37,38 @@ def view_activities(user_id=1):
         if var:
             so.insert(0, var) 
 
-        activities = s.query(Activity).filter(Activity.user_id == user_id)\
-                                      .order_by(so[0], so[1], so[2], so[3], so[4]).all()
+        r = s.query(Activity)\
+             .filter(Activity.user_id == user_id)\
+                             .order_by(so[0], so[1], so[2], so[3], so[4]).all()
         
-        return(render_template('activities.html', username='saurav', activities=activities))
+        return(render_template('activities.html', username='saurav', activities=r))
     except:
         s.rollback()
         s.close()
         raise       
 
-@app.route('/activity=<var>')
-def view_activity(user_id, activity_id):
+@app.route('/maps/<int:id>.html')
+def show_map(id):
+    return send_file('./static/maps/{0}.html'.format(id))
 
-    # query Postgres db for for that activity
+#@app.route('/activity', methods=['GET', 'POST'])
+@app.route('/activity/<int:id>', methods=['GET', 'POST'])
+def view_activity(id):
     try:
-        q = "SELECT * FROM {0} WHERE user_id={1} AND activity_id={2}".format('streams',
-                                                                         user_id,                                                                                      
-                                                                         activity_id)
-        df = pd.read_sql_query(q, engine)
+        q = "SELECT * FROM {0} WHERE activity_id={1}".format('streams', id)
     except: 
         print('Check DB connection: I cannot retrieve activity.')
 
+    df = pd.read_sql_query(q, engine)
+
     # get run coordinates as a list of tuple of (lat, lon)
-    coords = [ ( float(df.latlng[1:-2].split(',')[0]), 
-                 float(df.latlng[1:-2].split(',')[1]) )
-              for x in latlng ]
+    coords = [ (float(x[1:-2].split(',')[0]), 
+                float(x[1:-2].split(',')[1])) for x in df.latlng ]
+
     # get a folium map for the coords
-    m = get_map()
-    return(render_template('activity.html', map=m))
+    get_map(id, coords, z=df.velocity_smooth)
+
+    return render_template('activity.html', id=id)
 
 @app.route('/summary')
 @app.route('/summary_plot')

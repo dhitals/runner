@@ -5,3 +5,4 @@ tmp
 *.pyc
 **/__*
 **/*.pyc
+app/static/maps/*.html
