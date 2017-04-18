@@ -26,6 +26,7 @@ def index():
 @app.route('/activities')
 @app.route('/activities?sort=<var>')
 def view_activities(user_id=1):
+    """ View a list of all activities """
     s = Session()
 
     try: var
@@ -49,10 +50,12 @@ def view_activities(user_id=1):
 
 @app.route('/maps/<int:id>.html')
 def show_map(id):
+    """ GIven an activity ID, get and show the map """
     return send_file('./static/maps/{0}.html'.format(id))
 
 #@app.route('/activity', methods=['GET', 'POST'])
 @app.route('/activity/<int:id>', methods=['GET', 'POST'])
+""" View an activity """
 def view_activity(id):
     try:
         q = "SELECT * FROM {0} WHERE activity_id={1}".format('streams', id)
@@ -72,6 +75,8 @@ def view_activity(id):
 @app.route('/summary')
 @app.route('/summary_plot')
 def summary_plot():
+    """ View the Summary Plot of your activities by date range and summarizing frequency """
+
     summ = summarize('saurav')    
     plot_url = summ.plot(return_b64=True)
 
@@ -79,6 +84,8 @@ def summary_plot():
 
 @app.route('/summary_table')
 def summary_table():
+       """ View the Summary Table of your activities by date range and summarizing frequency """
+ 
     summ = summarize(username)
     df = summ.pprint()
     
@@ -86,7 +93,7 @@ def summary_table():
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_user():
-
+    """ Add a user from the GUI interface"""
     s = Session()
     try:
         u = User(username='saud', email='email22@gmail.com', 
@@ -101,7 +108,11 @@ def add_user():
         s.rollback()
         s.close()
         raise
-    
+
+### --------------------------------
+### Templates for Jinja conversions.
+### --------------------------------
+
 @app.template_filter('ns_to_hms')
 def ns_to_hms(x):
     """ Convert time units: nanosecond to hour """

@@ -37,3 +37,4 @@ The visualizations are dynamically served on to the web browser using
 * Dynamically tracing your runs using `D3.js`
 * The prediction part. I am using ARIMA and feeding the residuals into
  a neural net. It is definitely proving to be tricky.
+

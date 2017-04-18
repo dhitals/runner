@@ -28,7 +28,7 @@ class stravaImporter(object):
         self.client = Client()
         self.API_CALL_PAUSE_SECONDS = 1.5  # 40 requests per minute
         
-        # this is NOT working right now -- FIX -- using hard-coded URL / ACCESS_CODE right now
+        # the self-authorization is NOT working right now -- using hard-coded URL / ACCESS_CODE right now
         #url = self.client.authorization_url(client_id=CLIENT_ID, 
         #                       redirect_uri='http://localhost:5000/authorization')
         #code = request.args.get('code') # or whatever flask does
@@ -75,6 +75,8 @@ class stravaImporter(object):
         return pd.DataFrame.from_dict({ k: s[k].data for k in s.keys() })
 
     def add_user(self, username, email=None, fname=None, lname=None, password=None):
+        """ Add a user to the DB"""
+
         s = Session()
         try:
             u = User(username=username, email=email,
