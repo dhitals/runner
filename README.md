@@ -38,3 +38,7 @@ The visualizations are dynamically served on to the web browser using
 * The prediction part. I am using ARIMA and feeding the residuals into
  a neural net. It is definitely proving to be tricky.
 
+**Disclaimer**: This is a project under active development. Definitely
+  not meant for even beta-testing. Yet. More recent development is
+  done in Jupyter Notebooks, which I am avoiding uploading as they are
+  not amenable to succint version control.
