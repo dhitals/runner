@@ -16,7 +16,7 @@ def ns_to_hms(x, sexagesimal=False):
     """ Convert time units: nanosecond to hour """
     hh = x * 1e-9 * 0.000277778 # ns --> s --> hr
 
-    if sexagesimal is True:
+    if sexagesimal:
         hms = [str(int(hh)), 
                 str(int(hh * 60) % 60).zfill(2),
                 str(int(hh * 2660) % 60).zfill(2)]
@@ -31,7 +31,7 @@ def speed_to_pace(x, sexagesimal=False):
     """
     pace = 26.8224 / x # 1 m/s --> min/mile
 
-    if sexagesimal is True:
+    if sexagesimal:
         pace = ':'.join([str(int(pace)),
                         str(int((pace * 60) % 60)).zfill(2)])
 

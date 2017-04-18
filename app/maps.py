@@ -20,7 +20,6 @@ def get_map(activity_id, coords, z=None):
     ctr = tuple(np.mean(coords, axis=0))
 
     m = folium.Map(location=ctr, zoom_start=13, tiles='OpenStreetMap')
-
     
     if z is None:
         kw = dict(opacity=1.0, weight=3)
@@ -31,8 +30,13 @@ def get_map(activity_id, coords, z=None):
                                          colors=z,
                                          colormap=cm.LinearColormap(zcolors, vmin=2, vmax=5),
                                          weight=3)
-        
+            
     m.add_child(line)
+
+    # add markers for start and end
+    folium.Marker(coords[0], icon=folium.Icon(color='green')).add_to(m)
+    folium.Marker(coords[-1], icon=folium.Icon(color='black')).add_to(m)
+
     m.save('./app/static/maps/{0}.html'.format(activity_id))    
     return
 

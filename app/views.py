@@ -56,10 +56,9 @@ def show_map(id):
 def view_activity(id):
     try:
         q = "SELECT * FROM {0} WHERE activity_id={1}".format('streams', id)
+        df = pd.read_sql_query(q, engine)        
     except: 
-        print('Check DB connection: I cannot retrieve activity.')
-
-    df = pd.read_sql_query(q, engine)
+        print('Check DB connection: I cannot retrieve activity.')   
 
     # get run coordinates as a list of tuple of (lat, lon)
     coords = [ (float(x[1:-2].split(',')[0]), 
