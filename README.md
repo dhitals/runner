@@ -24,7 +24,6 @@ environmental conditions.
 * View route of your individual activities
 <img src="https://github.com/dhitals/runner/blob/master/app/static/images/example_run.png" width="300">
 * Tabulate the monthly/weekly summary of your activities
-![Example map of a run.](https://github.com/dhitals/runner/blob/master/app/static/images/example_table.png | width=250)
 <img src="https://github.com/dhitals/runner/blob/master/app/static/images/example_table.png" width="300">
 * Visualize the monthly/weekly summary of your activities
 
